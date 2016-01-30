@@ -1,0 +1,116 @@
+---
+title: "Challenge 1"
+author: "Pablo Barbera, Dan Cervone"
+answers written by: "Miyabi Ishihara"
+date: "January 20, 2016"
+output: html_document
+---
+
+Write commands that help you answer the following questions using the dataset `congress-terms.csv`. Try not to look at the previous code we used!
+
+```{r}
+setwd("~/Desktop/Short Course/data-science-workshop-master/modeling-viz")
+congress <- read.csv("./congress-terms.csv", stringsAsFactors = FALSE)
+```
+
+
+1. Make a time series plot showing Democratic/Republican control of congress over time. By varying color, line thickness, or other graphical properties, make this plot also convey the average age of the congressmen representing each part over time.
+
+```{r}
+
+num.dem <- tapply(congress$party, congress$congress, function(x) sum(x == "D"))
+num.rep <- tapply(congress$party, congress$congress, function(x) sum(x == "R"))
+names(num.dem)
+num.congress <- as.numeric(names(num.dem))
+num.congress
+
+dems <- subset(congress, party == "D")
+reps <- subset(congress, party == "R")
+
+dems$age <- as.numeric(as.vector(dems$age))
+reps$age <- as.numeric(as.vector(reps$age))
+
+# calculating avg age of D and R for each congress
+age.dem <- tapply(dems$age, dems$congress, function(x) mean(x, na.rem = T))
+age.rep <- tapply(reps$age, reps$congress, function(x) mean(x, na.rem = T))
+
+# creating a dataframe with necessary info
+congress2 <- data.frame(num.congress, num.dem, num.rep, age.dem, age.rep)
+
+# plots
+plot(congress2$num.congress, congress2$num.dem - congress2$num.rep)
+congress2 <- subset(congress2, num.congress >= 80)
+plot(congress2$num.congress, congress2$num.dem - congress2$num.rep)
+
+qplot(num.congress, num.dem - num.rep, data = congress2, color = age.dem, size = age.rep)
+
+```
+
+2. Write a function that, for a particular congress (e.g. congress 113), shows a map of the party breakdown by state.
+
+```{r}
+# creating a subset of congress 113 
+congress$congress <- as.numeric(congress$congress)
+class(congress$congress)
+congress113 <- subset(congress, congress == 113)
+
+
+# creating dataframe with the percentage of democrats for each state
+num.dem.113 <- tapply(congress113$party, congress113$state, function(x) sum(x == "D"))
+num.rep.113 <- tapply(congress113$party, congress113$state, function(x) sum(x == "R"))
+  # d <- as.numeric(as.vector(num.dem.113)) checking if numbers add up
+  # sum(d, na.rm = TRUE)
+percent.dem <- num.dem.113/(num.dem.113 + num.rep.113)
+state <- names(num.dem.113)
+data <- data.frame(state, control = percent.dem)
+data <- data[-c(1,2,3),]  # removing irrelevant rows
+
+
+# getting state lat/lon data
+library(maps)
+states <- map_data("state") # long/lat information for all states
+states$state <- state.abb[match(states$region, tolower(state.name))] # converting to abb
+
+
+# merging data and mapping
+states.data <- merge(states, data, by="state")
+state.map <- 
+    ggplot(states.data, aes(x=long, y=lat, group=group, fill=control)) + 
+    geom_polygon(color="white", size = 0.2) + 
+    theme_bw() + 
+    scale_fill_gradient(low="red", high="blue", na.value="black") + 
+    guides(fill=guide_legend(title="% Democratic")) +
+  　coord_map("mercator") + 
+    ggtitle(paste("% Democratic in Congress", 113, "by State"))
+state.map 
+
+
+# generalizing codes so that we get a map for any congress
+library(maps)
+states <- map_data("state") # long/lat information for all states
+states$state <- state.abb[match(states$region, tolower(state.name))] # converting to abb
+
+map <- function(cong){ # input congress number
+  sub.congress <- subset(congress, congress == cong)
+  
+  num.dems <- tapply(sub.congress$party, sub.congress$state, function(x) sum(x == "D"))
+  num.reps <- tapply(sub.congress$party, sub.congress$state, function(x) sum(x == "R"))
+  percent.dems <- num.dems / (num.dems + num.reps)
+  state <- names(num.dems)
+  data <- data.frame(state, control = percent.dems)
+  
+  states.data <- merge(states, data, by="state")
+  state.map <- 
+    ggplot(states.data, aes(x=long, y=lat, group=group, fill=control)) + 
+    geom_polygon(color="white", size = 0.2) + 
+    theme_bw() + 
+    scale_fill_gradient(low="red", high="blue", na.value="black") + 
+    guides(fill=guide_legend(title="% Democratic")) +
+  　coord_map("mercator") +
+    ggtitle(paste("% Democratic in Congress", cong, "by State"))
+  state.map 
+}
+
+map(113)
+
+```
