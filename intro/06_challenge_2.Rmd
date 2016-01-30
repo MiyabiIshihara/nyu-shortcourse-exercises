@@ -1,0 +1,117 @@
+---
+title: "Challenge 2"
+author: "Pablo Barbera, Dan Cervone"
+edited by: "Miyabi Ishihara"
+date: "January 20, 2016"
+output: html_document
+---
+
+Write commands that help you answer the following questions using the dataset `congress-terms.csv`. Please read the data into `R` and answer the questions below.
+
+```{r}
+# set working directory before reading data
+congress <- read.csv("./congress-terms.csv", stringsAsFactors = FALSE)
+
+```
+
+
+1. How many total congressmen have represented each political party?
+
+```{r}
+table(congress$party)
+congress <- subset(congress, party %in% c("D", "I", "R")) # keeping only dem, ind, rep
+table(congress$party)
+
+```
+
+2. Who was the youngest congressman elected and in how many congresses did he/she serve?
+ANSWER: Jed Johnson, 25 years old, 1 congress
+
+```{r}
+min(congress$age)
+youngest <- which.min(congress$age)
+first.youngest <- congress$firstname[youngest]
+last.youngest <- congress$lastname[youngest]
+paste(first.youngest, last.youngest)
+sum(congress$firstname == first.youngest & congress$lastname == last.youngest)
+
+
+# another way
+age <- as.numeric(as.vector(congress$age))
+congress$age <- age
+minage = min(congress$age, na.rm=TRUE)
+minage 
+
+firstname = (congress$firstname[which(congress$age == minage)])
+lastname = (congress$lastname[which(congress$age == minage)])
+```
+
+
+3. In how many congresses did the House of Representatives have a Democratic majority?
+
+```{r}
+
+house <- subset(congress, chamber == "house")
+house.dems <- tapply(house$party, house$congress, function(x) sum(x == "D"))
+house.reps <- tapply(house$party, house$congress, function(x) sum(x == "R"))
+sum(house.dems > house.reps)
+
+```
+
+4. Which state has had the oldest congressmen on average?
+
+```{r}
+
+congress$age <- as.numeric(congress$age)
+age.table <- tapply(congress$age, congress$state, mean)
+oldest <- sort(age.table, decreasing = TRUE)[1]
+age.table[which.max(age.table)] # another way
+
+```
+
+5. For which state is the proportion of total Democrats throughout history closest to the proportion of Republicans?
+
+```{r}
+
+dem <- tapply(congress$party, congress$state, function(x) sum(x == "D"))
+rep <- tapply(congress$party, congress$state, function(x) sum(x == "R"))
+prop.dem <- dem/(dem + rep)
+diff <- abs(prop.dem - 0.5)
+diff[which.min(diff)]
+
+sort(diff, decreasing = FALSE)[1] # another way to do this is by sorting
+
+```
+
+6. How many times has the majority party in the House of Representatives changed?
+
+```{r}
+
+dem.majority <- house.dems > house.reps
+party.change <- 0
+for(i in 2:length(dem.majority)){
+  if(dem.majority[i] != dem.majority[i-1]){
+    party.change <- party.change + 1
+  }
+}
+party.change #6
+```
+
+7. Which state in the 113th congress has the most experienced congressmen (measured my the average number of congresses in which they served)?
+
+```{r}
+
+experience <- rep(0, nrow(congress))
+for(i in 2:nrow(congress)){
+  # counting the no. of previous appearances of each congressman
+  experience[i] <- sum(congress$firstname[1:(i-1)] == congress$firstname[i] & congress$lastname[1:(i-1)] == congress$lastname[i])
+}
+
+congress$experience <- experience
+congress.113 <- subset(congress, congress == 113)
+# mean experience year for each state in congress.113
+exp.table <- tapply(congress.113$experience, congress.113$state, mean)
+exp.table[which.max(exp.table)]
+
+# ans: Vermont (average number served is 11 years)
+```
