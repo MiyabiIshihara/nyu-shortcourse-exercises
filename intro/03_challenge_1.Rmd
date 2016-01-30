@@ -1,0 +1,96 @@
+---
+title: "Challenge 1"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAMElEQVR42mNgIAXY2Nj8x8cHC8AwMl9XVxe3QqwKcJmIVwFWhehW4LQSXQCnm3ABAHD6MDrmRgfrAAAAAElFTkSuQmCC
+author: "Pablo Barbera, Dan Cervone"
+answers written by: "Miyabi Ishihara"
+date: "January 20, 2016"
+output: html_document
+---
+
+Write commands that help you answer the following questions using the dataset `humansofnewyork.csv`. Read this data into `R` and answer the questions below, trying not to rely too much on the previous code we used!
+
+```{r}
+# set working directory before reading data
+humans <- read.csv("./humansofnewyork.csv", stringsAsFactors = FALSE) 
+str(humans)
+dim(humans) 
+head(humans) 
+summary(humans)
+```
+
+
+1. How many status updates have been posted on this page?
+
+```{r}
+table(humans$type)
+sum(humans$type == "status") # 83
+```
+
+2. What is the total number of likes, comments, and shares it received?
+
+```{r}
+sum(humans$likes_count)
+sum(humans$comments_count)
+sum(humans$shares_count, na.rm = TRUE)
+
+```
+
+3. What is the content of the post with the highest number of shares?
+
+```{r}
+maxshare = max(humans$shares_count, na.rm = TRUE) 
+humans$message[which(humans$shares_count == maxshare)] 
+
+
+# another way is by sorting
+sorted = sort(humans$shares_count, decreasing = TRUE)
+sorted[1]
+humans$message[which(humans$shares_count == sorted[1])]
+
+```
+
+4. What was the date in which the first photo was posted?
+
+```{r}
+photos <- subset(humans, humans$type == "photo")
+sorted.photos <- sort(t$created_time, decreasing = FALSE)
+sorted.photos[1] # October 11, 2011
+
+
+# another way
+first.photo <- min(which(humans$type == "photo")) # storing id of the first photo
+humans$created_time[first.photo]
+
+
+# unnecessarily long way
+type.table <- table(humans$type)
+type.names <- names(type.table)
+type.names[grep("photo", type.names)]
+photos <- subset(humans, type %in% type.names[grep("photo", type.names)])
+sorted = sort(photos$created_time, decreasing = FALSE)
+sorted[1]
+
+```
+
+5. What is the total number of likes that the page has ever received, excluding its most popular post?
+
+```{r}
+total.likes <- sum(humans$likes_count)
+max.likes <- max(humans$likes_count) # no. of likes of a most popular post
+total.likes - max.likes
+```
+
+6. How many posts have received more than 1,000,000 likes?
+
+```{r}
+sum(humans$likes_count > 1000000)
+```
+
+7. What was the total number of shares received by posts published each year?
+
+
+```{r}
+
+humans$year <- substr(humans$created_time, 1, 4)
+tapply(humans$shares_count, humans$year, sum)  # tapply is very useful
+
+```
