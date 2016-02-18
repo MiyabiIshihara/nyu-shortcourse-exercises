@@ -11,24 +11,25 @@ Write commands that help you answer the following questions using the dataset `c
 ```{r}
 setwd("~/Desktop/Short Course/data-science-workshop-master/modeling-viz")
 congress <- read.csv("./congress-terms.csv", stringsAsFactors = FALSE)
+congress <- subset(congress, party %in% c("D", "I", "R"))
+congress$age <- as.numeric(congress$age)
 ```
 
 
 1. Make a time series plot showing Democratic/Republican control of congress over time. By varying color, line thickness, or other graphical properties, make this plot also convey the average age of the congressmen representing each part over time.
 
 ```{r}
-
-num.dem <- tapply(congress$party, congress$congress, function(x) sum(x == "D"))
-num.rep <- tapply(congress$party, congress$congress, function(x) sum(x == "R"))
-names(num.dem)
-num.congress <- as.numeric(names(num.dem))
-num.congress
+library(gplots)
 
 dems <- subset(congress, party == "D")
 reps <- subset(congress, party == "R")
 
-dems$age <- as.numeric(as.vector(dems$age))
-reps$age <- as.numeric(as.vector(reps$age))
+num.dem <- tapply(dems$party, dems$congress, length)
+num.rep <- tapply(reps$party, reps$congress, length)
+#names(num.dem)
+num.congress <- as.numeric(names(num.dem))
+num.congress
+
 
 # calculating avg age of D and R for each congress
 age.dem <- tapply(dems$age, dems$congress, function(x) mean(x, na.rem = T))
@@ -37,12 +38,39 @@ age.rep <- tapply(reps$age, reps$congress, function(x) mean(x, na.rem = T))
 # creating a dataframe with necessary info
 congress2 <- data.frame(num.congress, num.dem, num.rep, age.dem, age.rep)
 
-# plots
+
+
+# plots difference between the no. of dem and rep for each congress
 plot(congress2$num.congress, congress2$num.dem - congress2$num.rep)
+
+# same plot for congress >= 80
 congress2 <- subset(congress2, num.congress >= 80)
 plot(congress2$num.congress, congress2$num.dem - congress2$num.rep)
 
-qplot(num.congress, num.dem - num.rep, data = congress2, color = age.dem, size = age.rep)
+# same plot using qplot
+# qplot(num.congress, num.dem - num.rep, data = congress2, color = age.dem, size = age.rep)
+
+
+
+library(ggplot2)
+congress.plot <- ggplot(data = congress2)
+
+# plot of just democrats' number and age
+dems.plot <- 
+  congress.plot + 
+  geom_line(data = congress2, aes(x = num.congress, y = num.dem, 
+                                  color = age.dem, size = age.dem)) + 
+  scale_color_gradient(low = "gray95", high = "gray20") + 
+  guides(color = guide_legend(), size = guide_legend())
+
+# plot of republicans added
+both.plot <- 
+  dems.plot + 
+  geom_line(data = congress2, aes(x = num.congress, y = num.rep, 
+                                  color = age.rep, size = age.rep))
+
+both.plot
+
 
 ```
 
@@ -83,6 +111,8 @@ state.map <-
   　coord_map("mercator") + 
     ggtitle(paste("% Democratic in Congress", 113, "by State"))
 state.map 
+
+
 
 
 # generalizing codes so that we get a map for any congress
