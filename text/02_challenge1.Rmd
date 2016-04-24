@@ -1,0 +1,64 @@
+---
+title: "Challenge 1"
+author: Miyabi Ishihara
+output: html_document
+---
+
+Problems created by Pablo Barbera, Dan Cervone
+[&laquo; Text Analysis Module](../text/README.md)
+
+Write commands that help you answer the following questions about the bullying dataset.
+
+1. How many of these tweets are in English? (there is a column that can help you here)
+
+```{r, results = "hide"}
+df.tweets <- read.csv("bullying.csv", header = TRUE, stringsAsFactors = FALSE)
+table(df.tweets$lang)
+table(df.tweets$lang)["en"]
+```
+
+
+2. How many of the tweets contain a link? How many mention another Twitter user?
+```{r, results = "hide"}
+length(grep("HTTPLINK", df.tweets$text))
+length(grep("@USER", df.tweets$text))
+```
+
+
+3. How many tweets contain a hashtag?
+```{r, results = "hide"}
+length(grep("#", df.tweets$text))
+```
+
+
+4. How many of the tweets mention anything about a school? (include any word you think relate to school)
+```{r, results = "hide"}
+length(grep("school|class|teacher|student", df.tweets$text, ignore.case = TRUE))
+```
+
+
+5. Display the first 20 tweets which mention a school.
+```{r, results = "hide"}
+df.tweets$school <- grepl("school|class|teacher|student", df.tweets$text, ignore.case = TRUE)
+school.tweets <- df.tweets[df.tweets$school == TRUE,]
+school.tweets$text[1:20]
+school.tweets[,c("text")][1:20] # another way to do the same thing
+```
+
+
+6. How many tweets mention both "mom" and "dad"?
+```{r, results = "hide"}
+df.tweets$mom <- grepl(" mom |^mom | mom| mom\\.", df.tweets$text, ignore.case=TRUE)
+df.tweets$dad <- grepl(" dad |^dad | dad$| dad\\.", df.tweets$text, ignore.case=TRUE)
+
+table(df.tweets$mom == TRUE & df.tweets$dad == TRUE)
+df.tweets$text[df.tweets$mom & df.tweets$dad]
+```
+
+
+7. Display the first 15 tweets which mention "mom" and "dad". Note any peculiar findings.
+
+```{r, results = "hide"}
+head(df.tweets$text[df.tweets$mom==TRUE & df.tweets$dad==TRUE], n=15)
+```
+
