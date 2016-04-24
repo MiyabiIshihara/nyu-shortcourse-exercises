@@ -1,6 +1,6 @@
 ---
 title: "Challenge 2"
-output: html_document
+output: pdf_document
 ---
 
 Problems created by Pablo Barbera, Dan Cervone
